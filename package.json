@@ -1,0 +1,13 @@
+{
+  "name": "cashflow-sim-api",
+  "version": "0.1.0",
+  "description": "Cash flow risk simulator API (zero-dependency Node HTTP server)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
