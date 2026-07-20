@@ -6,7 +6,7 @@
  */
 
 const http = require('http');
-const { simulateCashFlow } = require('./simulate');
+const { simulateCashFlow, analyzeSensitivity } = require('./simulate');
 
 const PORT = process.env.PORT || 3001;
 
@@ -86,6 +86,44 @@ const server = http.createServer((req, res) => {
       } catch (e) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Simulation failed', message: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && req.url === '/api/sensitivity') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      let parsed;
+      try {
+        parsed = JSON.parse(body || '{}');
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON in request body' }));
+        return;
+      }
+
+      const errors = validateInput(parsed);
+      if (errors.length > 0) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid input', details: errors }));
+        return;
+      }
+
+      // Apply the same free-tier month cap as /api/simulate so the sensitivity
+      // analysis is consistent with the forecast the user sees.
+      const isPaidUser = false; // placeholder until auth is added
+      const requestedMonths = parsed.monthsToSimulate || 12;
+      const monthsToSimulate = isPaidUser ? requestedMonths : Math.min(requestedMonths, 3);
+
+      try {
+        const result = analyzeSensitivity({ ...parsed, monthsToSimulate });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ...result, tierLimited: !isPaidUser && requestedMonths > 3 }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Sensitivity analysis failed', message: e.message }));
       }
     });
     return;

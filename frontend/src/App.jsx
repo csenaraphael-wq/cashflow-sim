@@ -14,6 +14,7 @@ import {
 // Locally it falls back to the dev API on port 3001.
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const API_URL = `${API_BASE}/api/simulate`;
+const SENSITIVITY_URL = `${API_BASE}/api/sensitivity`;
 
 const VARIABILITY_OPTIONS = [
   { value: 'steady', label: 'Steady' },
@@ -43,6 +44,13 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [sensitivity, setSensitivity] = useState(null);
+  const [sensError, setSensError] = useState(null);
+  const [sensLoading, setSensLoading] = useState(false);
+
+  // The exact payload used for the last run, so "What matters most?" analyzes
+  // the same scenario the results on screen were produced from.
+  const [lastPayload, setLastPayload] = useState(null);
 
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -67,6 +75,9 @@ export default function App() {
     setError(null);
     setResult(null);
     setLoading(true);
+    // A fresh run invalidates any previous sensitivity analysis.
+    setSensitivity(null);
+    setSensError(null);
 
     // Only send fully-filled expense rows, coerced to numbers.
     const knownUpcomingExpenses = upcomingExpenses
@@ -94,6 +105,7 @@ export default function App() {
         throw new Error((data.error || 'Request failed') + detail);
       }
       setResult(data);
+      setLastPayload(payload);
     } catch (err) {
       // A network-level failure (API not running) shows up as a TypeError here.
       setError(
@@ -103,6 +115,35 @@ export default function App() {
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSensitivity() {
+    if (!lastPayload) return;
+    setSensError(null);
+    setSensitivity(null);
+    setSensLoading(true);
+
+    try {
+      const res = await fetch(SENSITIVITY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lastPayload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const detail = data.details ? `: ${data.details.join(', ')}` : '';
+        throw new Error((data.error || 'Request failed') + detail);
+      }
+      setSensitivity(data);
+    } catch (err) {
+      setSensError(
+        err.message === 'Failed to fetch'
+          ? 'Could not reach the API. Is the server running on http://localhost:3001?'
+          : err.message
+      );
+    } finally {
+      setSensLoading(false);
     }
   }
 
@@ -248,46 +289,114 @@ export default function App() {
                     data={result.monthlyPercentiles}
                     margin={{ top: 10, right: 20, bottom: 10, left: 10 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e1e0d9" vertical={false} />
                     <XAxis
                       dataKey="month"
-                      label={{ value: 'Month', position: 'insideBottom', offset: -5 }}
+                      stroke="#898781"
+                      tick={{ fill: '#52514e', fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e1e0d9' }}
+                      label={{ value: 'Month', position: 'insideBottom', offset: -5, fill: '#898781', fontSize: 12 }}
                     />
                     <YAxis
                       tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
                       width={60}
+                      stroke="#898781"
+                      tick={{ fill: '#52514e', fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
                     />
                     <Tooltip
                       formatter={(value, name) => [currency(value), name]}
                       labelFormatter={(label) => `Month ${label}`}
+                      contentStyle={{
+                        borderRadius: 10,
+                        border: '1px solid rgba(11,11,11,0.08)',
+                        boxShadow: '0 4px 16px -6px rgba(11,11,11,0.12)',
+                        fontSize: 13,
+                      }}
                     />
                     <Legend />
                     <Line
                       type="monotone"
                       dataKey="p90"
                       name="Best case (P90)"
-                      stroke="#22a06b"
+                      stroke="#949492"
                       strokeWidth={2}
+                      strokeDasharray="6 4"
                       dot={false}
                     />
                     <Line
                       type="monotone"
                       dataKey="p50"
                       name="Likely (P50)"
-                      stroke="#2563eb"
-                      strokeWidth={2}
+                      stroke="#111111"
+                      strokeWidth={2.5}
                       dot={false}
                     />
                     <Line
                       type="monotone"
                       dataKey="p10"
                       name="Worst case (P10)"
-                      stroke="#dc2626"
+                      stroke="#5c5c5a"
                       strokeWidth={2}
+                      strokeDasharray="2 3"
                       dot={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>
+              </div>
+
+              <div className="card sensitivity-card">
+                <h2>What matters most?</h2>
+                <p className="hint">
+                  See which input has the biggest effect on your risk of running
+                  out of cash.
+                </p>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={handleSensitivity}
+                  disabled={sensLoading}
+                >
+                  {sensLoading ? 'Analyzing…' : 'What matters most?'}
+                </button>
+
+                {sensError && <div className="card error">{sensError}</div>}
+
+                {sensitivity && (
+                  <ol className="sensitivity-list">
+                    {sensitivity.ranked.map((item) => {
+                      const max = sensitivity.ranked[0].impactScore || 1;
+                      const widthPct = Math.max(
+                        2,
+                        (item.impactScore / max) * 100
+                      );
+                      return (
+                        <li key={item.input} className="sensitivity-row">
+                          <div className="sensitivity-label">{item.label}</div>
+                          <div className="sensitivity-bar-track">
+                            <div
+                              className="sensitivity-bar"
+                              style={{ width: `${widthPct}%` }}
+                            />
+                          </div>
+                          <div className="sensitivity-score">
+                            {item.impactScore} pts
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                )}
+
+                {sensitivity && (
+                  <p className="hint">
+                    Impact = how much your chance of running out of cash swings
+                    (in percentage points) when that input moves, holding
+                    everything else fixed.
+                  </p>
+                )}
               </div>
             </>
           )}

@@ -1,91 +1,160 @@
 :root {
-  --border: #e2e8f0;
-  --text: #1e293b;
-  --muted: #64748b;
-  --bg: #f8fafc;
-  --blue: #2563eb;
+  /* Surfaces & ink — neutral: black / grey / white */
+  --page: #f4f4f3;
+  --surface: #ffffff;
+  --text: #111111;
+  --muted: #5c5c5a;
+  --faint: #949492;
+
+  /* Lines & accents — all neutral, mostly translucent black */
+  --border: rgba(17, 17, 17, 0.08);
+  --border-strong: rgba(17, 17, 17, 0.16);
+  --hairline: #e4e4e2;
+  --accent: #1a1a1a;
+  --accent-hover: #000000;
+  --accent-soft: rgba(17, 17, 17, 0.06);
+
+  /* Feedback (kept neutral, distinguished by weight/tone) */
+  --bad: #3a3a3a;
+  --bad-soft: rgba(17, 17, 17, 0.05);
+
+  /* Depth */
+  --shadow-sm: 0 1px 2px rgba(17, 17, 17, 0.05);
+  --shadow-md: 0 8px 28px -12px rgba(17, 17, 17, 0.22);
+
+  --radius: 14px;
+  --radius-sm: 9px;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--text);
-  background: var(--bg);
+  background: var(--page);
+  line-height: 1.5;
 }
 
 .page {
-  max-width: 1000px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 32px 20px 64px;
+  padding: 56px 24px 80px;
+}
+
+/* ---------- Header ---------- */
+
+header {
+  margin-bottom: 36px;
 }
 
 header h1 {
-  margin: 0 0 4px;
-  font-size: 28px;
+  margin: 0 0 8px;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.021em;
+  line-height: 1.1;
 }
 
 .subtitle {
-  margin: 0 0 24px;
+  margin: 0;
   color: var(--muted);
+  font-size: 16px;
+  max-width: 46ch;
 }
+
+/* ---------- Layout ---------- */
 
 .layout {
   display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 24px;
+  grid-template-columns: 360px 1fr;
+  gap: 28px;
   align-items: start;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 860px) {
   .layout {
     grid-template-columns: 1fr;
   }
 }
 
 .card {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
 }
+
+/* ---------- Form ---------- */
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
+  position: sticky;
+  top: 24px;
 }
 
 .form label {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 14px;
+  gap: 7px;
+  font-size: 13px;
   font-weight: 600;
+  letter-spacing: -0.006em;
+  color: var(--text);
 }
 
 .form input,
 .form select {
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   font-size: 15px;
   font-weight: 400;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form input:focus,
+.form select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.form select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' stroke='%2352514e' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
 }
 
 .expenses {
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: var(--radius-sm);
+  padding: 16px;
   margin: 0;
+  background: var(--page);
 }
 
 .expenses legend {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--faint);
   padding: 0 6px;
 }
 
@@ -98,46 +167,89 @@ header h1 {
 
 .expense-row input {
   width: 100%;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+
+.expense-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* ---------- Buttons ---------- */
 
 button {
   cursor: pointer;
+  font-family: inherit;
   font-size: 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease, border-color 0.15s ease,
+    transform 0.05s ease, box-shadow 0.15s ease;
+}
+
+button:active {
+  transform: translateY(1px);
 }
 
 button.primary {
-  background: var(--blue);
+  background: var(--accent);
   color: #fff;
   border: none;
-  padding: 12px;
+  padding: 13px;
   font-weight: 600;
   font-size: 15px;
+  letter-spacing: -0.006em;
+  box-shadow: var(--shadow-sm);
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
 }
 
 button.primary:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: default;
 }
 
 button.secondary {
-  background: #f1f5f9;
-  border: 1px solid var(--border);
-  padding: 8px 12px;
-  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  padding: 10px 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+button.secondary:hover:not(:disabled) {
+  background: var(--page);
+  border-color: var(--faint);
+}
+
+button.secondary:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 button.remove {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--faint);
   font-size: 18px;
   line-height: 1;
-  padding: 0 10px;
+  padding: 0 12px;
 }
+
+button.remove:hover {
+  border-color: var(--bad);
+  color: var(--bad);
+  background: var(--bad-soft);
+}
+
+/* ---------- Results ---------- */
 
 .results {
   display: flex;
@@ -147,45 +259,125 @@ button.remove {
 
 .headline {
   text-align: center;
+  padding: 40px 24px;
+  background:
+    radial-gradient(120% 120% at 50% 0%, var(--accent-soft) 0%, transparent 60%),
+    var(--surface);
 }
 
 .big-number {
-  font-size: 56px;
+  font-size: 68px;
   font-weight: 800;
-  color: var(--blue);
+  color: var(--accent);
   line-height: 1;
+  letter-spacing: -0.03em;
 }
 
 .big-label {
-  font-size: 18px;
+  font-size: 16px;
   color: var(--muted);
-  margin-top: 8px;
+  margin-top: 10px;
+  letter-spacing: -0.006em;
 }
 
 .worst-case {
-  margin: 16px 0 0;
+  margin: 18px 0 0;
   font-size: 14px;
+  color: var(--text);
 }
 
-.chart-card h2 {
+.chart-card h2,
+.sensitivity-card h2 {
   margin: 0 0 4px;
   font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.014em;
 }
 
 .hint {
-  color: var(--muted);
+  color: var(--faint);
   font-size: 13px;
   margin: 4px 0;
 }
 
 .error {
-  border-color: #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
+  border-color: var(--border-strong);
+  border-left: 3px solid var(--text);
+  background: var(--bad-soft);
+  color: var(--text);
+  font-size: 14px;
 }
 
 .placeholder {
-  color: var(--muted);
+  color: var(--faint);
   text-align: center;
-  padding: 48px 20px;
+  padding: 64px 24px;
+  font-size: 15px;
+  border-style: dashed;
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+
+/* ---------- Sensitivity ---------- */
+
+.sensitivity-card .secondary {
+  margin-top: 10px;
+}
+
+.sensitivity-list {
+  list-style: none;
+  margin: 22px 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sensitivity-row {
+  display: grid;
+  grid-template-columns: 168px 1fr auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.sensitivity-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.006em;
+}
+
+.sensitivity-bar-track {
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  height: 22px;
+  overflow: hidden;
+}
+
+.sensitivity-bar {
+  background: linear-gradient(90deg, #b8b8b6 0%, #7a7a78 100%);
+  height: 100%;
+  border-radius: 999px;
+  min-width: 3px;
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The top-ranked driver gets the strongest emphasis. */
+.sensitivity-row:first-child .sensitivity-bar {
+  background: linear-gradient(90deg, #3a3a3a 0%, #111111 100%);
+}
+
+.sensitivity-score {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .sensitivity-row {
+    grid-template-columns: 108px 1fr auto;
+    gap: 10px;
+  }
 }

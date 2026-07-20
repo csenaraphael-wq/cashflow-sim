@@ -127,4 +127,116 @@ function simulateCashFlow(params) {
   };
 }
 
-module.exports = { simulateCashFlow };
+// Ordered from least to most variable — used to bump variability up/down one level.
+const VARIABILITY_LEVELS = ['steady', 'somewhat_variable', 'very_variable'];
+
+// Friendly labels for the ranked sensitivity output.
+const INPUT_LABELS = {
+  avgMonthlyIncome: 'Average monthly income',
+  avgMonthlyExpenses: 'Average monthly expenses',
+  incomeVariability: 'Income variability',
+  expenseVariability: 'Expense variability',
+};
+
+/**
+ * Builds the set of perturbed variants for a single input.
+ *
+ * Numeric inputs (income/expenses) are moved ±20%. Variability inputs are
+ * bumped up/down one level; at an extreme (e.g. already "steady") only the
+ * one available direction is used. Returns an array of full param objects,
+ * each a copy of `base` with exactly one field changed.
+ */
+function buildVariants(base, input) {
+  const variants = [];
+
+  if (input === 'incomeVariability' || input === 'expenseVariability') {
+    const idx = VARIABILITY_LEVELS.indexOf(base[input]);
+    for (const nextIdx of [idx + 1, idx - 1]) {
+      if (nextIdx >= 0 && nextIdx < VARIABILITY_LEVELS.length) {
+        variants.push({ ...base, [input]: VARIABILITY_LEVELS[nextIdx] });
+      }
+    }
+  } else {
+    // Numeric input: +20% and -20%.
+    variants.push({ ...base, [input]: base[input] * 1.2 });
+    variants.push({ ...base, [input]: base[input] * 0.8 });
+  }
+
+  return variants;
+}
+
+/**
+ * Runs a basic one-at-a-time sensitivity analysis on top of the Monte Carlo
+ * engine. Takes the same inputs as simulateCashFlow, establishes a baseline
+ * probabilityOfNegativeBalance, then perturbs each key input (holding all
+ * others constant) and measures how much that probability swings.
+ *
+ * The impact score for an input is the average absolute change (in percentage
+ * points) in probabilityOfNegativeBalance across its perturbations. A bigger
+ * swing means that input matters more to overall risk.
+ *
+ * Note: because the underlying simulation is stochastic, small impact scores
+ * (roughly < 1 point) can be dominated by Monte Carlo noise. We use the same
+ * simulation count as a normal run, which keeps typical noise well below the
+ * impacts that matter for ranking.
+ *
+ * @param {Object} params  Same shape as simulateCashFlow's params.
+ * @returns {Array<{input: string, label: string, impactScore: number}>}
+ *          Ranked highest-impact first.
+ */
+function analyzeSensitivity(params) {
+  const {
+    startingCashBalance,
+    avgMonthlyIncome,
+    incomeVariability,
+    avgMonthlyExpenses,
+    expenseVariability,
+    knownUpcomingExpenses = [],
+    monthsToSimulate = 12,
+    numberOfSimulations = 5000,
+  } = params;
+
+  // The frozen set of original inputs every variant is derived from.
+  const base = {
+    startingCashBalance,
+    avgMonthlyIncome,
+    incomeVariability,
+    avgMonthlyExpenses,
+    expenseVariability,
+    knownUpcomingExpenses,
+    monthsToSimulate,
+    numberOfSimulations,
+  };
+
+  const baseline = simulateCashFlow(base).probabilityOfNegativeBalance;
+
+  const INPUTS = [
+    'avgMonthlyIncome',
+    'avgMonthlyExpenses',
+    'incomeVariability',
+    'expenseVariability',
+  ];
+
+  const ranked = INPUTS.map((input) => {
+    const variants = buildVariants(base, input);
+
+    // Average absolute swing from baseline across this input's variants.
+    const totalSwing = variants.reduce((sum, variant) => {
+      const prob = simulateCashFlow(variant).probabilityOfNegativeBalance;
+      return sum + Math.abs(prob - baseline);
+    }, 0);
+    const impactScore = variants.length > 0 ? totalSwing / variants.length : 0;
+
+    return {
+      input,
+      label: INPUT_LABELS[input],
+      impactScore: Math.round(impactScore * 10) / 10,
+    };
+  });
+
+  ranked.sort((a, b) => b.impactScore - a.impactScore);
+
+  return { baseline, ranked };
+}
+
+module.exports = { simulateCashFlow, analyzeSensitivity };
