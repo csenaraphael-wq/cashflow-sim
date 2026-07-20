@@ -22,8 +22,8 @@
   --shadow-sm: 0 1px 2px rgba(17, 17, 17, 0.05);
   --shadow-md: 0 8px 28px -12px rgba(17, 17, 17, 0.22);
 
-  --radius: 14px;
-  --radius-sm: 9px;
+  --radius: 5px;
+  --radius-sm: 4px;
 }
 
 * {
@@ -37,7 +37,7 @@ html {
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, "Segoe UI", system-ui, sans-serif;
   color: var(--text);
   background: var(--page);
   line-height: 1.5;
@@ -59,8 +59,8 @@ header h1 {
   margin: 0 0 8px;
   font-size: 34px;
   font-weight: 700;
-  letter-spacing: -0.021em;
-  line-height: 1.1;
+  letter-spacing: -0.028em;
+  line-height: 1.08;
 }
 
 .subtitle {
@@ -349,7 +349,7 @@ button.remove:hover {
 .sensitivity-bar-track {
   background: var(--page);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 3px;
   height: 22px;
   overflow: hidden;
 }
@@ -357,7 +357,7 @@ button.remove:hover {
 .sensitivity-bar {
   background: linear-gradient(90deg, #b8b8b6 0%, #7a7a78 100%);
   height: 100%;
-  border-radius: 999px;
+  border-radius: 2px;
   min-width: 3px;
   transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
